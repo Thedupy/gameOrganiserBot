@@ -1,6 +1,7 @@
 const { Client, MessageEmbed} = require('discord.js');
 const client = new Client();
-const {prefix, token} = require("./config.json");
+const {prefix} = require("./config.json");
+require("dotenv").config();
 
 let tabSession = [
 
@@ -143,4 +144,4 @@ function editSessionBoard()
     }
 }
 
-client.login(token);
+client.login(process.env.API_KEY);
