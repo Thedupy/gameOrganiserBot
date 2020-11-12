@@ -1,4 +1,4 @@
-const { Client, MessageEmbed} = require('discord.js');
+const { Client, MessageEmbed, Message } = require('discord.js');
 const client = new Client();
 const {prefix} = require("./config.json");
 require("dotenv").config();
@@ -25,11 +25,24 @@ client.on('message', msg => {
     let tabMsg = msg.content.split(" ");
     switch(tabMsg[0]) {
         //TEST
-        case `${prefix}registerMsg`:
+        case `${prefix}register`:
+            var userTab = [];
             const filter = (reaction, user) => {
-                return reaction.emoji.name === '👍' && user.id === message.author.id;
+                return reaction.emoji.name === '⌛';
             };
+            msg.channel.send("Message ouvert aux inscriptions !")
+            const collector = msg.createReactionCollector(filter, { time: 15000 });
+            collector.on('collect', (reaction, user) => {
+                console.log(`Collected ${reaction.emoji.name} from ${user.tag}`);
+                userTab.push(user);
+            });
 
+            collector.on('end', collected => {
+                console.log(`Collected ${collected.size} items`);
+                if (userTab.length > 0) {
+                    msg.channel.send(`${userTab[0]} s'est inscrit !`)
+                }
+            });
             break;
         //Gestion sessions        
         case `${prefix}sessionadd`:
