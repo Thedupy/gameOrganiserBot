@@ -4,14 +4,16 @@ const {prefix} = require("./config.json");
 require("dotenv").config();
 
 let tabSession = [
-
+    { id: 0, jeu: "Jeu test", date: new Date(Date.now()), desc: "Desc Test", users: [] },
 ];
-//Ben yes
+
 let idChannelCmd = "";
 let idChannelTabAffiche = "";
 let myChannelCmd = "";
 let myChannelTabAffiche = "";
+// Message d'affichage
 let messageModify = "";
+let tabArgs = [];
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
@@ -22,16 +24,16 @@ client.on('message', msg => {
     const command = msg.content.split(" ")[0].toLowerCase()
     let tabMsg = msg.content.split(" ");
     switch(tabMsg[0]) {
+        //TEST
+        case `${prefix}registerMsg`:
+            const filter = (reaction, user) => {
+                return reaction.emoji.name === '👍' && user.id === message.author.id;
+            };
+
+            break;
         //Gestion sessions        
         case `${prefix}sessionadd`:
-            var regex = /(?<key>[\S]+):(?<value>[^ "]+|["][\w?! ]*["])/gm;
-            var matches = msg.content.matchAll(regex)
-            var tabArgs = {}
-            for (const match of matches) {
-                console.log(match);
-                var monString = match[2].replace(/\"/g, "");
-                tabArgs[match[1]] = monString;
-            }
+            tabArgs = getArgs(msg.content);
             // Gestion de date
             var now = new Date(Date.now());
             var dates = tabArgs["jour"].split("/");
@@ -46,8 +48,8 @@ client.on('message', msg => {
 
             let newSession = {
                 id: tabSession.length,
-                game: tabArgs["jeu"],
-                time: sessionDate,
+                jeu: tabArgs["jeu"],
+                date: sessionDate,
                 desc: tabArgs["desc"],
             };
             tabSession.push(newSession);
@@ -70,7 +72,39 @@ client.on('message', msg => {
                 msg.reply("La session que tu as voulu supprimer n'as pas été trouvé, essaye encore");
             }
             break;
-        
+
+        case `${prefix}sessionupdate`:
+            tabArgs = getArgs(msg.content);
+            if (!("session" in tabArgs)) {
+                msg.reply("Vous avez oublié l'attribut session dans votre requete... Re-essayez");
+            }
+            else {
+                const sessionIndex = parseInt(tabArgs.session);
+                const session = tabSession.find(item => item.id == sessionIndex);
+                if (session === undefined) {
+                    msg.reply("Session introuvable, etes vous sur d'avoir mis le bon numero ?");
+                } else {
+                    Object.keys(tabArgs).forEach(key => {
+                        if (key == "heure") {
+                            [heure, minutes] = tabArgs[key].split("H");
+                            console.log(`Heures a modifier ${heure} et ${minutes}`)
+                            session.date.setHours(heure, minutes);
+                        }
+                        else if (key == "jour") {
+                            [jour, mois] = tabArgs[key].split("/");
+                            session.date.setDate(jour);
+                            session.date.setMonth(mois - 1);
+                        }
+                        else {
+                            session[key] = tabArgs[key]
+                        }
+                    })
+                    editSessionBoard();
+                    msg.reply(`Session ${sessionIndex} modifié !`)
+                }
+            }
+            break;
+
         case `${prefix}registerTabAffiche`:
             var myId = msg.channel.id;
             console.log(myId);
@@ -145,11 +179,11 @@ function editSessionBoard()
             .catch(console.error);
         }else {
         tabSession.forEach(session => {
-            var jour = session.time.getDate()
-            var jourName = getDayName(session.time.getDay());
-            var mois = getMonthName(session.time.getMonth());
-            var heureMinute = session.time.getHours() + "H" + session.time.getMinutes();
-            listeSessions += `${session.id} | **${session.game}** , **${jourName} ${jour} ${mois}** à _${heureMinute}_ : ${session.desc}\n`;
+            var jour = session.date.getDate()
+            var jourName = getDayName(session.date.getDay());
+            var mois = getMonthName(session.date.getMonth());
+            var heureMinute = session.date.getHours() + "H" + session.date.getMinutes();
+            listeSessions += `${session.id} | **${session.jeu}** , **${jourName} ${jour} ${mois}** à _${heureMinute}_ : ${session.desc}\n`;
             console.log(listeSessions);
         })
         messageModify.edit(listeSessions)
@@ -171,6 +205,17 @@ function getMonthName(monthNum)
 {
     var monthName = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Aout", "Septembre", "Novembre", "Décembre"];
     return monthName[monthNum];
+}
+
+function getArgs(myCmd) {
+    var regex = /(?<key>[\S]+):(?<value>[^ "]+|["][\w?! ]*["])/gm;
+    var matches = myCmd.matchAll(regex)
+    var tabArgs = {}
+    for (const match of matches) {
+        var monString = match[2].replace(/\"/g, "");
+        tabArgs[match[1]] = monString;
+    }
+    return tabArgs;
 }
 
 client.login(process.env.API_KEY);

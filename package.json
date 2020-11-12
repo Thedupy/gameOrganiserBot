@@ -4,9 +4,10 @@
   "description": "Un bot qui organise des sessions de jeu",
   "main": "bot.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node bot.js",
+    "nodemon": "nodemon bot.js"
   },
-  "author": "",
+  "author": "Mathieu Ducournau",
   "license": "ISC",
   "dependencies": {
     "discord.js": "^12.4.1",
