@@ -123,10 +123,15 @@ client.on('message', msg => {
 
         case `${prefix}sessionHelp`:
             const dupyGood = msg.guild.emojis.cache.find(emoji => emoji.name === "dupygood")
-            myChannelCmd.send("**Voici un template de commande de creation de session a copier et a remplir** \n" +
-            `\`${prefix}sessionadd |jeu;titre;Jour/Mois;Heure/Minute;description\` \n` +
-            "_*Un exemple ci-dessous*_ : \n" +
-            `\`${prefix}sessionadd |Sea of Thieves;Fable Time !;24/12;21:00;On va s'amuser, venez !\` \n` +
+            msg.reply("**Voici un template de commande de creation de session a copier et a remplir** \n" +
+                `\`${prefix}sessionadd jeu:titre jour:Jour/Mois heure:Heure/Minute desc:description(optionnel)\` \n` +
+                "_*Un exemple ci-dessous*_ : \n" +
+                `\`${prefix}sessionadd jeu:"Sea of Thieves" jour:13/11 heure:21H30\` \n` +
+                "_*Pour modifier une session existante, utilisez la commande suivante*_ : \n" +
+                `\`${prefix}sessionupdate session:[numeroSession] jeu:"Undertale"\` \n` +
+                "_*Pour supprimer une session, utilisez la commande suivante*_ : \n" +
+                `\`${prefix}sessionremove [numeroSession]\` \n` +
+                "_*Les \`\"\"\` ne sont necessaire que quand votre valeur a des espaces comme \"Sea of Thieves\"*_ : \n" +
             `Amusez vous bien ! ${dupyGood}`);
         break;
         case `${prefix}messageEmbed`:
