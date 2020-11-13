@@ -14,6 +14,8 @@ let myChannelTabAffiche = "";
 // Message d'affichage
 let messageModify = "";
 let tabArgs = [];
+let collector;
+let filter;
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
@@ -27,11 +29,11 @@ client.on('message', msg => {
         //TEST
         case `${prefix}register`:
             var userTab = [];
-            const filter = (reaction, user) => {
+            filter = (reaction, user) => {
                 return reaction.emoji.name === '⌛';
             };
             msg.channel.send("Message ouvert aux inscriptions !")
-            const collector = msg.createReactionCollector(filter, { time: 15000 });
+            collector = msg.createReactionCollector(filter, { time: 15000 });
             collector.on('collect', (reaction, user) => {
                 console.log(`Collected ${reaction.emoji.name} from ${user.tag}`);
                 userTab.push(user);
@@ -43,6 +45,34 @@ client.on('message', msg => {
                     msg.channel.send(`${userTab[0]} s'est inscrit !`)
                 }
             });
+            break;
+
+        case `${prefix}test`:
+            var myMess;
+            var userTab = [];
+            filter = (reaction, user) => {
+                return reaction.emoji.name === '👍';
+            };
+            msg.reply("Reagissez a ce message pour vous inscrire !")
+                .then(message => {
+                    collector = message.createReactionCollector(filter, { time: 5000 });
+                    console.log("Message bien créé");
+                    collector.on('collect', (reaction, user) => {
+                        console.log(`Collected ${reaction.emoji.name} from ${user.tag}`);
+                        userTab.push(user);
+                    });
+
+                    collector.on('end', collected => {
+                        console.log(`Collected ${collected.size} items`);
+                        if (userTab.length > 0) {
+                            message.channel.send(`${userTab[0]} s'est inscrit !`)
+                        }
+                    });
+                })
+                .catch(error => {
+                    msg.channel.send("Error dans la creation !");
+                    console.log(error);
+                });
             break;
         //Gestion sessions        
         case `${prefix}sessionadd`:
