@@ -4,13 +4,11 @@ const {prefix} = require("./config.json");
 require("dotenv").config();
 
 let tabSession = [
-    { id: 0, jeu: "Jeu test", date: new Date(Date.now()), desc: "Desc Test", users: [] },
+    // { id: 0, jeu: "Jeu test", date: new Date(Date.now()), desc: "Desc Test", users: [] , postID: 232323},
 ];
 
-let idChannelCmd = "";
-let idChannelTabAffiche = "";
-let myChannelCmd = "";
-let myChannelTabAffiche = "";
+let idPostChannel = "";
+let postChannel = "";
 // Message d'affichage
 let messageModify = "";
 let tabArgs = [];
@@ -22,65 +20,22 @@ client.on('ready', () => {
 });
 
 client.on('message', msg => {
-    if(!msg.content.startsWith(prefix) || msg.author.bot) return;
-    const command = msg.content.split(" ")[0].toLowerCase()
+    if (!msg.content.startsWith(prefix) || msg.author.bot) return;
     let tabMsg = msg.content.split(" ");
     switch(tabMsg[0]) {
         //TEST
-        case `${prefix}register`:
-            var userTab = [];
-            filter = (reaction, user) => {
-                return reaction.emoji.name === '⌛';
-            };
-            msg.channel.send("Message ouvert aux inscriptions !")
-            collector = msg.createReactionCollector(filter, { time: 15000 });
-            collector.on('collect', (reaction, user) => {
-                console.log(`Collected ${reaction.emoji.name} from ${user.tag}`);
-                userTab.push(user);
-            });
 
-            collector.on('end', collected => {
-                console.log(`Collected ${collected.size} items`);
-                if (userTab.length > 0) {
-                    msg.channel.send(`${userTab[0]} s'est inscrit !`)
-                }
-            });
-            break;
-
-        case `${prefix}test`:
-            var myMess;
-            var userTab = [];
-            filter = (reaction, user) => {
-                return reaction.emoji.name === '👍';
-            };
-            msg.reply("Reagissez a ce message pour vous inscrire !")
-                .then(message => {
-                    collector = message.createReactionCollector(filter, { time: 5000 });
-                    console.log("Message bien créé");
-                    collector.on('collect', (reaction, user) => {
-                        console.log(`Collected ${reaction.emoji.name} from ${user.tag}`);
-                        userTab.push(user);
-                    });
-
-                    collector.on('end', collected => {
-                        console.log(`Collected ${collected.size} items`);
-                        if (userTab.length > 0) {
-                            message.channel.send(`${userTab[0]} s'est inscrit !`)
-                        }
-                    });
-                })
-                .catch(error => {
-                    msg.channel.send("Error dans la creation !");
-                    console.log(error);
-                });
-            break;
         //Gestion sessions        
         case `${prefix}sessionadd`:
+            if (idPostChannel == "") {
+                msg.reply("Pas de channel de post pour le post de messgage de jeu, utilisez la commande \`$registerPost [idChannel]\`");
+                return;
+            };
             tabArgs = getArgs(msg.content);
             // Gestion de date
             var now = new Date(Date.now());
             var dates = tabArgs["jour"].split("/");
-            var sessionDate = new Date(`2020-${dates[1]}-${dates[0]}`)
+            var sessionDate = new Date(`2020-${dates[1] - 1}-${dates[0]}`)
             if (now > sessionDate) {
                 sessionDate.setFullYear(sessionDate.getFullYear() + 1);
             }
@@ -93,11 +48,12 @@ client.on('message', msg => {
                 id: tabSession.length,
                 jeu: tabArgs["jeu"],
                 date: sessionDate,
-                desc: tabArgs["desc"],
+                users: []
             };
             tabSession.push(newSession);
             msg.reply("Ta session a bien été ajouté !");
             editSessionBoard();
+            postRegisterMessage(newSession);
             console.log(JSON.stringify(newSession));
         break;
 
@@ -148,39 +104,23 @@ client.on('message', msg => {
             }
             break;
 
-        case `${prefix}registerTabAffiche`:
-            var myId = msg.channel.id;
+        case `${prefix}registerPost`:
+            var myId = msg.content.split(" ")[1];
             console.log(myId);
-            if(idChannelTabAffiche === myId) {
-                myChannelTabAffiche.send("Déja inscrit a ce channel");
+            if (idPostChannel === myId) {
+                msg.reply("Déja inscrit a ce channel");
             }
             else {
             client.channels.fetch(myId)
             .then(element => {
                 msg.reply("l'affichage sera fait dans le channel : " + element.name);
-                idChannelTabAffiche = myId;
-                myChannelTabAffiche = client.channels.cache.get(idChannelTabAffiche);
-                myChannelTabAffiche.send("L'affichage sera fait désormais dans le channel ")
+                idPostChannel = myId;
+                postChannel = client.channels.cache.get(idPostChannel);
             })
-            .catch(error => console.log(error));
+                .catch(error => { msg.channel.send("Channel inconnu, re-essayez"); console.error(error); });
             }
         break;
-        case `${prefix}registerCmd`:
-            var myId = msg.channel.id;
-            console.log(myId);
-            if(myId === idChannelCmd) {
-                myChannelCmd.log("Déja inscrit a ce channel");
-            }
-            else {
-            client.channels.fetch(myId)
-            .then(element => {
-                msg.reply("Je suis maintenant présent dans le channel " + element.name);
-                idChannelCmd = myId;
-                myChannelCmd = client.channels.cache.get(idChannelCmd);
-            })
-            .catch(error => console.log(error));
-            }
-        break;
+
         case `${prefix}sessionHelp`:
             const dupyGood = msg.guild.emojis.cache.find(emoji => emoji.name === "dupygood")
             myChannelCmd.send("**Voici un template de commande de creation de session a copier et a remplir** \n" +
@@ -198,14 +138,11 @@ client.on('message', msg => {
             break;
         case `${prefix}printEdit`:
             msg.channel.send("Message a modifier")
-            .then(message => messageModify = message)
-            .catch(console.error);
-            editSessionBoard();
+                .then(message => messageModify = message)
+                .catch(error => console.log(error));
             break;
-        case `${prefix}editlol`:
-            messageModify.edit("Bonjour la famille !")
-            .then(message => console.log(message))
-            .catch(console.error);
+        case `${prefix}majEdit`:
+            editSessionBoard();
             break;
         default:
             msg.reply(`Commande inconnu, utilisez la commande ${prefix}sessionHelp pour connaitre la liste des commandes`)
@@ -227,6 +164,11 @@ function editSessionBoard()
             var mois = getMonthName(session.date.getMonth());
             var heureMinute = session.date.getHours() + "H" + session.date.getMinutes();
             listeSessions += `${session.id} | **${session.jeu}** , **${jourName} ${jour} ${mois}** à _${heureMinute}_ : ${session.desc}\n`;
+            listeSessions += "Joueurs Inscrit : ";
+            session.users.forEach(joueur => {
+                listeSessions += ` ${joueur.username}`
+            })
+            listeSessions += "\n--------------------\n";
             console.log(listeSessions);
         })
         messageModify.edit(listeSessions)
@@ -259,6 +201,40 @@ function getArgs(myCmd) {
         tabArgs[match[1]] = monString;
     }
     return tabArgs;
+}
+
+function postRegisterMessage(session) {
+    console.log(`Jeu de session : ${session.jeu}`);
+
+    filter = (reaction, user) => {
+        return !session.users.find(item => item.tag === user.tag);
+    };
+    var jour = session.date.getDate()
+    var jourName = getDayName(session.date.getDay());
+    var mois = getMonthName(session.date.getMonth());
+    var heureMinute = session.date.getHours() + "H" + session.date.getMinutes();
+    postChannel.send(`Message d'inscription pour la session de **${session.jeu}** le **${jourName} ${jour} ${mois}** à _${heureMinute}_`)
+        .then(message => {
+            collector = message.createReactionCollector(filter);
+            session.postID = message.id;
+            console.log("Message bien créé");
+            collector.on('collect', (reaction, user) => {
+                console.log(`Collected ${reaction.emoji.name} from ${user.tag}`);
+                session.users.push(user);
+                editSessionBoard();
+            });
+
+            // collector.on('end', collected => {
+            //     console.log(`Collected ${collected.size} items`);
+            //     if (userTab.length > 0) {
+            //         message.channel.send(`${userTab[0].personne} s'est inscrit avec l'émoticone ${userTab[0].emoji.emoji.name}!`)
+            //     }
+            // });
+        })
+        .catch(error => {
+            msg.channel.send("Error dans la creation !");
+            console.log(error);
+        });
 }
 
 client.login(process.env.API_KEY);
