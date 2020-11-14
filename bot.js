@@ -212,7 +212,7 @@ function postRegisterMessage(session) {
     console.log(`Jeu de session : ${session.jeu}`);
 
     filter = (reaction, user) => {
-        return !session.users.find(item => item.tag === user.tag);
+        return true;
     };
     var jour = session.date.getDate()
     var jourName = getDayName(session.date.getDay());
@@ -224,9 +224,14 @@ function postRegisterMessage(session) {
             session.postID = message.id;
             console.log("Message bien créé");
             collector.on('collect', (reaction, user) => {
+                var myMess = session.users.find(item => item.tag == user.tag);
                 console.log(`Collected ${reaction.emoji.name} from ${user.tag}`);
-                session.users.push(user);
-                editSessionBoard();
+                // session.users.push(user);
+                // editSessionBoard();
+            });
+
+            collector.on("remove", (reaction, user) => {
+                console.log(`User : ${user.username} / Emoji : ${reaction.emoji.name}`);
             });
 
             // collector.on('end', collected => {
