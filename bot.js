@@ -220,26 +220,29 @@ function postRegisterMessage(session) {
     var heureMinute = session.date.getHours() + "H" + session.date.getMinutes();
     postChannel.send(`Message d'inscription pour la session de **${session.jeu}** le **${jourName} ${jour} ${mois}** à _${heureMinute}_`)
         .then(message => {
-            collector = message.createReactionCollector(filter);
+            collector = message.createReactionCollector(filter, { dispose: true });
             session.postID = message.id;
             console.log("Message bien créé");
             collector.on('collect', (reaction, user) => {
                 var myMess = session.users.find(item => item.tag == user.tag);
-                console.log(`Collected ${reaction.emoji.name} from ${user.tag}`);
-                // session.users.push(user);
-                // editSessionBoard();
+                if (myMess != undefined) {
+                    console.log("Utilisateur déja inscrit");
+                } else {
+                    console.log(`Collected ${reaction.emoji.name} from ${user.tag}`);
+                    postChannel.send(`${user.username} s'est inscrit a la session`);
+                    session.users.push(user);
+                }
             });
 
             collector.on("remove", (reaction, user) => {
                 console.log(`User : ${user.username} / Emoji : ${reaction.emoji.name}`);
+                remUser = session.users.find(item => item.tag == user.tag);
+                if (remUser != undefined) {
+                    postChannel.send(`${user.username} s'est desinscrit de la session ${session.jeu}`);
+                    session.users.splice(session.users.indexOf(remUser));
+                }
+                console.log(session.users);
             });
-
-            // collector.on('end', collected => {
-            //     console.log(`Collected ${collected.size} items`);
-            //     if (userTab.length > 0) {
-            //         message.channel.send(`${userTab[0].personne} s'est inscrit avec l'émoticone ${userTab[0].emoji.emoji.name}!`)
-            //     }
-            // });
         })
         .catch(error => {
             msg.channel.send("Error dans la creation !");
